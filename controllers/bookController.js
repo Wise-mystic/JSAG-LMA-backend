@@ -1,11 +1,11 @@
 const Book = require('../models/Book');
 
-// @desc    Get all books (not removed)
+// @desc    Get all books (including removed for statistics)
 // @route   GET /api/books
 // @access  Private
 const getAllBooks = async (req, res) => {
   try {
-    const books = await Book.find({ removed: false }).sort({ createdAt: -1 });
+    const books = await Book.find({}).sort({ createdAt: -1 });
     
     res.status(200).json({
       success: true,
