@@ -15,10 +15,10 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS configuration
+// CORS configuration - Allow all origins
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-  credentials: true,
+  origin: '*', // Allow all origins
+  credentials: false, // Set to false when using wildcard origin
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
