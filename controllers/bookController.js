@@ -60,7 +60,7 @@ const getBook = async (req, res) => {
 // @access  Private
 const addBook = async (req, res) => {
   try {
-    const { title, author, genre, year } = req.body;
+    const { title, author, genre, year, isbn, description } = req.body;
 
     // Validate required fields
     if (!title || !author || !genre || !year) {
@@ -75,6 +75,8 @@ const addBook = async (req, res) => {
       author,
       genre,
       year,
+      isbn: isbn || '',
+      description: description || '',
       isBorrowed: false
     });
 
@@ -106,6 +108,7 @@ const addBook = async (req, res) => {
 // @access  Private
 const toggleBorrowStatus = async (req, res) => {
   try {
+    const { borrowedBy, borrowedDate, expectedReturnedDate } = req.body;
     const book = await Book.findById(req.params.id);
     
     if (!book) {
@@ -122,7 +125,47 @@ const toggleBorrowStatus = async (req, res) => {
       });
     }
 
-    book.isBorrowed = !book.isBorrowed;
+    // If book is currently borrowed, return it (clear borrower info)
+    if (book.isBorrowed) {
+      book.isBorrowed = false;
+      book.borrowedBy = { name: '', contact: '' };
+      book.borrowedDate = null;
+      book.expectedReturnedDate = null;
+    } else {
+      // If book is available, borrow it (require borrower info)
+      if (!borrowedBy || !borrowedBy.name || !borrowedBy.contact) {
+        return res.status(400).json({
+          success: false,
+          message: 'Borrower name and contact are required when borrowing a book'
+        });
+      }
+
+      // Validate borrower name
+      if (borrowedBy.name.trim().length < 2) {
+        return res.status(400).json({
+          success: false,
+          message: 'Borrower name must be at least 2 characters long'
+        });
+      }
+
+      // Validate and format phone number
+      let phoneNumber = borrowedBy.contact.replace(/\D/g, ''); // Remove all non-digits
+      if (phoneNumber.length !== 10) {
+        return res.status(400).json({
+          success: false,
+          message: 'Contact must be exactly 10 digits (e.g., 1234567890)'
+        });
+      }
+
+      book.isBorrowed = true;
+      book.borrowedBy = {
+        name: borrowedBy.name.trim(),
+        contact: phoneNumber
+      };
+      book.borrowedDate = borrowedDate || new Date();
+      book.expectedReturnedDate = expectedReturnedDate || null;
+    }
+
     await book.save();
 
     res.status(200).json({
@@ -192,7 +235,7 @@ const removeBook = async (req, res) => {
 // @access  Private
 const updateBook = async (req, res) => {
   try {
-    const { title, author, genre, year } = req.body;
+    const { title, author, genre, year, isbn, description, borrowedBy, borrowedDate, expectedReturnedDate } = req.body;
 
     const book = await Book.findById(req.params.id);
     
@@ -215,6 +258,11 @@ const updateBook = async (req, res) => {
     if (author) book.author = author;
     if (genre) book.genre = genre;
     if (year) book.year = year;
+    if (isbn !== undefined) book.isbn = isbn;
+    if (description !== undefined) book.description = description;
+    if (borrowedBy) book.borrowedBy = borrowedBy;
+    if (borrowedDate) book.borrowedDate = borrowedDate;
+    if (expectedReturnedDate) book.expectedReturnedDate = expectedReturnedDate;
 
     await book.save();
 

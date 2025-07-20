@@ -37,8 +37,24 @@ const bookSchema = new mongoose.Schema({
     default: false
   },
   borrowedBy: {
-    name: { type: String, trim: true, default: '' },
-    contact: { type: String, trim: true, default: '' }
+    name: { 
+      type: String, 
+      trim: true, 
+      default: '',
+      minlength: [2, 'Borrower name must be at least 2 characters long']
+    },
+    contact: { 
+      type: String, 
+      trim: true, 
+      default: '',
+      validate: {
+        validator: function(v) {
+          // Allow empty string (for returned books) or exactly 10 digits
+          return v === '' || /^\d{10}$/.test(v);
+        },
+        message: 'Contact must be exactly 10 digits (e.g., 1234567890)'
+      }
+    }
   },
   borrowedDate: {
     type: Date
