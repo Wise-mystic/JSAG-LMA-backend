@@ -41,7 +41,13 @@ const bookSchema = new mongoose.Schema({
       type: String, 
       trim: true, 
       default: '',
-      minlength: [2, 'Borrower name must be at least 2 characters long']
+      validate: {
+        validator: function(v) {
+          // Allow empty string (for returned books) or at least 2 characters
+          return v === '' || v.length >= 2;
+        },
+        message: 'Borrower name must be at least 2 characters long'
+      }
     },
     contact: { 
       type: String, 
@@ -72,10 +78,12 @@ const bookSchema = new mongoose.Schema({
   },
   removedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Admin'
+    ref: 'Admin',
+    required: false
   },
   removedAt: {
-    type: Date
+    type: Date,
+    required: false
   }
 }, {
   timestamps: true

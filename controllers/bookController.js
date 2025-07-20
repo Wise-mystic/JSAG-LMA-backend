@@ -128,7 +128,10 @@ const toggleBorrowStatus = async (req, res) => {
     // If book is currently borrowed, return it (clear borrower info)
     if (book.isBorrowed) {
       book.isBorrowed = false;
-      book.borrowedBy = { name: '', contact: '' };
+      book.borrowedBy = {
+        name: '',
+        contact: ''
+      };
       book.borrowedDate = null;
       book.expectedReturnedDate = null;
     } else {
@@ -175,6 +178,15 @@ const toggleBorrowStatus = async (req, res) => {
     });
   } catch (error) {
     console.error('Toggle borrow status error:', error);
+    
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: messages.join(', ')
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -188,6 +200,7 @@ const toggleBorrowStatus = async (req, res) => {
 const removeBook = async (req, res) => {
   try {
     const { reason } = req.body;
+    console.log('Remove book request:', { bookId: req.params.id, reason, adminId: req.admin._id });
 
     if (!reason) {
       return res.status(400).json({
@@ -214,6 +227,16 @@ const removeBook = async (req, res) => {
 
     book.removed = true;
     book.removalReason = reason;
+    book.removedBy = req.admin._id; // Set the admin who removed the book
+    book.removedAt = new Date();
+    
+    console.log('Saving book with removal data:', {
+      removed: book.removed,
+      removalReason: book.removalReason,
+      removedBy: book.removedBy,
+      removedAt: book.removedAt
+    });
+    
     await book.save();
 
     res.status(200).json({
@@ -223,6 +246,15 @@ const removeBook = async (req, res) => {
     });
   } catch (error) {
     console.error('Remove book error:', error);
+    
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: messages.join(', ')
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Server error'
