@@ -68,6 +68,12 @@ const bookSchema = new mongoose.Schema({
   expectedReturnedDate: {
     type: Date
   },
+  // New field to track which admin approved borrowing
+  borrowedApprovedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin',
+    default: null
+  },
   removed: {
     type: Boolean,
     default: false

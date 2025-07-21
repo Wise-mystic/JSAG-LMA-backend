@@ -5,7 +5,9 @@ const Book = require('../models/Book');
 // @access  Private
 const getAllBooks = async (req, res) => {
   try {
-    const books = await Book.find({}).sort({ createdAt: -1 });
+    const books = await Book.find({}).sort({ createdAt: -1 })
+      .populate('borrowedApprovedBy', 'name')
+      .populate('removedBy', 'name');
     
     res.status(200).json({
       success: true,
@@ -134,6 +136,7 @@ const toggleBorrowStatus = async (req, res) => {
       };
       book.borrowedDate = null;
       book.expectedReturnedDate = null;
+      book.borrowedApprovedBy = null; // Clear approving admin
     } else {
       // If book is available, borrow it (require borrower info)
       if (!borrowedBy || !borrowedBy.name || !borrowedBy.contact) {
@@ -167,6 +170,7 @@ const toggleBorrowStatus = async (req, res) => {
       };
       book.borrowedDate = borrowedDate || new Date();
       book.expectedReturnedDate = expectedReturnedDate || null;
+      book.borrowedApprovedBy = req.admin._id; // Set approving admin
     }
 
     await book.save();
